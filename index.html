@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI HOT 每日速递 · 归档</title>
+<style>:root{
+  --indigo:#6366f1; --indigo2:#8b5cf6; --bg:#f5f6fb; --panel:#ffffff;
+  --text:#1e2230; --muted:#6b7280; --line:#e7e9f2; --shadow:0 6px 24px rgba(30,34,48,.08);
+  --hover:#f3f4ff;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0d0f16; --panel:#161922; --text:#e8eaf0; --muted:#9aa3b2;
+    --line:#262b38; --shadow:0 6px 24px rgba(0,0,0,.45); --hover:#1d2030; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+.app{max-width:1180px;margin:0 auto;padding:12px 22px 0;height:100vh;display:flex;flex-direction:column}
+/* 顶栏 */
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px;flex:none}
+.brand{display:inline-flex;align-items:center;gap:9px;font-weight:700;color:var(--indigo);letter-spacing:.5px;font-size:13px}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,var(--indigo),var(--indigo2));box-shadow:0 0 0 4px rgba(99,102,241,.16)}
+.topbar h1{font-size:23px;margin:5px 0 2px;letter-spacing:.3px}
+.topbar .sub{color:var(--muted);font-size:13.5px}
+.topbar .today{font-size:13px;color:var(--muted);text-align:right}
+.topbar .today b{color:var(--indigo);font-size:15px}
+.gh-link{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;
+  border:1px solid var(--line);color:var(--text);background:var(--panel);transition:all .15s ease;flex:none}
+.gh-link:hover{color:#fff;background:var(--indigo);border-color:var(--indigo);transform:translateY(-1px);box-shadow:0 4px 12px rgba(99,102,241,.35)}
+.gh-link svg{width:19px;height:19px;fill:currentColor}
+.brand .gh-link{width:23px;height:23px;border-radius:7px;margin-left:9px;vertical-align:middle}
+.brand .gh-link svg{width:13px;height:13px}
+/* tab（横向 3 个，带外框，位于左侧列顶部） */
+.tabs{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:5px;box-shadow:var(--shadow);width:100%;margin-bottom:10px;flex:none}
+.tab{border:none;background:transparent;color:var(--muted);font-size:15px;font-weight:600;
+  padding:9px 22px;border-radius:10px;cursor:pointer;transition:all .15s ease;font-family:inherit}
+.tab:hover{color:var(--text)}
+.tab.active{background:linear-gradient(135deg,var(--indigo),var(--indigo2));color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.35)}
+/* 布局：左侧列( tab框 + 树 ) 与右侧内容同顶对齐；内容撑满视口高度 */
+.layout{flex:1;min-height:0;display:flex;gap:18px;align-items:stretch}
+.left-col{width:288px;flex:none;height:100%;display:flex;flex-direction:column;min-height:0}
+.sidebar{flex:1;min-height:0;overflow:auto;padding:2px 2px}
+.divider{flex:none;width:1px;background:var(--line);margin:2px 0}
+.detail{flex:1;min-width:0;display:flex;flex-direction:column;height:100%}
+.detail-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 4px 8px}
+.detail-bar .dt-title{font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:8px}
+.detail-bar .dt-title .pill{font-size:11px;font-weight:700;color:#fff;background:var(--indigo);padding:2px 9px;border-radius:999px}
+.detail-bar a.open{color:var(--indigo);text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}
+.detail-bar a.open:hover{text-decoration:underline}
+iframe#frame{width:100%;flex:1 1 auto;min-height:0;border:none;background:var(--bg)}
+/* 折叠树 */
+.group{margin-bottom:6px}
+.group-head{width:100%;display:flex;align-items:center;gap:8px;background:transparent;border:none;
+  padding:10px 10px;cursor:pointer;color:var(--text);font-size:14px;font-weight:700;border-radius:10px;font-family:inherit}
+.group-head:hover{background:var(--hover)}
+.chev{display:inline-block;transition:transform .18s ease;color:var(--muted);font-size:11px}
+.group.open .chev{transform:rotate(90deg)}
+.g-count{margin-left:auto;font-size:12px;color:var(--muted);background:var(--hover);
+  padding:1px 9px;border-radius:999px;font-weight:600}
+.children{overflow:hidden;max-height:0;transition:max-height .25s ease;padding-left:6px}
+.group.open .children{max-height:2000px}
+.leaf{display:flex;align-items:center;gap:9px;padding:9px 12px;margin:2px 0;border-radius:10px;
+  text-decoration:none;color:var(--text);font-size:14px;cursor:pointer;transition:all .12s ease}
+.leaf:hover{background:var(--hover)}
+.leaf .l-dot{width:7px;height:7px;border-radius:50%;background:var(--indigo);flex:none;opacity:.55}
+.leaf .l-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.leaf .l-count{font-size:11.5px;color:var(--muted);background:var(--hover);padding:1px 8px;border-radius:999px}
+.leaf.active{background:linear-gradient(135deg,rgba(99,102,241,.14),rgba(139,92,246,.10));color:var(--indigo);font-weight:700}
+.leaf.active .l-dot{opacity:1;background:var(--indigo)}
+.empty{color:var(--muted);padding:40px 16px;text-align:center;font-size:14px}
+footer.page{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+/* 响应式 */
+@media (max-width:820px){
+  .app{height:auto}
+  .layout{flex:none;flex-direction:column;height:auto}
+  .left-col{width:100%;height:auto}
+  .sidebar{width:100%;height:auto;max-height:300px}
+  .divider{display:none}
+  iframe#frame{height:62vh;flex:none}
+}</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div>
+      <span class="brand"><span class="dot"></span>AI HOT 每日速递
+        <a class="gh-link" href="https://github.com/juicyzhou/ai-hot-daily" target="_blank" rel="noopener" title="GitHub 仓库：juicyzhou/ai-hot-daily" aria-label="GitHub">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+        </a>
+      </span>
+      <h1>AI 圈每日热点</h1>
+    </div>
+    <div class="today">今日（北京时间）<br><b>2026-08-03 20:37</b></div>
+  </div>
+
+  <div class="layout">
+    <div class="left-col">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="daily">日报</button>
+        <button class="tab" data-tab="weekly">周报</button>
+        <button class="tab" data-tab="monthly">月报</button>
+      </div>
+      <nav class="sidebar" id="sidebar"></nav>
+    </div>
+    <div class="divider"></div>
+    <section class="detail">
+      <div class="detail-bar">
+        <div class="dt-title"><span class="pill" id="dt-pill">日报</span><span id="dt-title">—</span></div>
+        <a class="open" id="dt-open" href="#" target="_blank">打开原页 ↗</a>
+      </div>
+      <iframe id="frame" src="about:blank" title="预览"></iframe>
+    </section>
+  </div>
+
+  <footer class="page">数据来源：由 juicyzhou 设定任务自动整理 · GitHub：<a href="https://github.com/juicyzhou/ai-hot-daily" target="_blank" rel="noopener">git@github.com:juicyzhou/ai-hot-daily.git</a></footer>
+</div>
+<script>
+const INDEX = {"daily": {"defaultPath": "daily/2026/08/2026-08-03.html", "nodes": [{"label": "2026 年 08 月", "children": [{"label": "2026-08-03 周一", "path": "daily/2026/08/2026-08-03.html", "count": 3}, {"label": "2026-08-02 周日", "path": "daily/2026/08/2026-08-02.html", "count": 2}, {"label": "2026-08-01 周六", "path": "daily/2026/08/2026-08-01.html", "count": 7}]}, {"label": "2026 年 07 月", "children": [{"label": "2026-07-31 周五", "path": "daily/2026/07/2026-07-31.html", "count": 20}, {"label": "2026-07-30 周四", "path": "daily/2026/07/2026-07-30.html", "count": 20}, {"label": "2026-07-29 周三", "path": "daily/2026/07/2026-07-29.html", "count": 24}, {"label": "2026-07-28 周二", "path": "daily/2026/07/2026-07-28.html", "count": 14}, {"label": "2026-07-27 周一", "path": "daily/2026/07/2026-07-27.html", "count": 4}]}]}, "weekly": {"defaultPath": "weekly/2026/08/2026-08-03.html", "nodes": [{"label": "2026 年 8 月", "children": [{"label": "第32周 · 08-03~08-09", "path": "weekly/2026/08/2026-08-03.html", "count": 3}]}, {"label": "2026 年 7 月", "children": [{"label": "第31周 · 07-27~08-02", "path": "weekly/2026/07/2026-07-27.html", "count": 91}]}]}, "monthly": {"defaultPath": "monthly/2026/2026-08.html", "nodes": [{"label": "2026 年 8 月", "path": "monthly/2026/2026-08.html", "count": 12}, {"label": "2026 年 7 月", "path": "monthly/2026/2026-07.html", "count": 82}]}};
+const PILL = { daily:"日报", weekly:"周报", monthly:"月报" };
+let activeTab = "daily";
+const selected = {};   // period -> path (记忆每个 tab 的当前选择)
+
+function makeLeaf(period, leaf, isDefault){
+  const a = document.createElement("a");
+  a.className = "leaf" + (isDefault ? " active" : "");
+  a.href = "#";
+  a.dataset.path = leaf.path;
+  const dot = document.createElement("span"); dot.className = "l-dot";
+  const lab = document.createElement("span"); lab.className = "l-label"; lab.textContent = leaf.label;
+  a.appendChild(dot); a.appendChild(lab);
+  if (leaf.count != null){
+    const c = document.createElement("span"); c.className = "l-count"; c.textContent = leaf.count;
+    a.appendChild(c);
+  }
+  a.addEventListener("click", (e)=>{ e.preventDefault(); selectLeaf(period, leaf, a); });
+  return a;
+}
+
+function buildTab(period){
+  const data = INDEX[period];
+  const def = selected[period] || data.defaultPath;
+  const sb = document.getElementById("sidebar");
+  sb.innerHTML = "";
+  if (!data.nodes.length){
+    sb.innerHTML = '<div class="empty">暂无数据，先跑一次生成器吧～</div>';
+    return;
+  }
+  data.nodes.forEach(node=>{
+    if (node.children){               // 折叠分组（月 / 年）
+      const hasDef = node.children.some(c => c.path === def);
+      const g = document.createElement("div");
+      g.className = "group" + (hasDef ? " open" : "");
+      const h = document.createElement("button");
+      h.className = "group-head";
+      h.innerHTML = '<span class="chev">▶</span><span>'+esc(node.label)+'</span>'+
+                    '<span class="g-count">'+node.children.length+'</span>';
+      const list = document.createElement("div"); list.className = "children";
+      node.children.forEach(ch => list.appendChild(makeLeaf(period, ch, ch.path === def)));
+      h.addEventListener("click", ()=> g.classList.toggle("open"));
+      g.appendChild(h); g.appendChild(list);
+      sb.appendChild(g);
+    } else {                          // 平铺叶子（单年月的月份）
+      sb.appendChild(makeLeaf(period, node, node.path === def));
+    }
+  });
+}
+
+function selectLeaf(period, leaf, el){
+  selected[period] = leaf.path;
+  document.querySelectorAll(".leaf.active").forEach(x=>x.classList.remove("active"));
+  if (el) el.classList.add("active");
+  document.getElementById("frame").src = leaf.path;
+  document.getElementById("dt-title").textContent = leaf.label;
+  document.getElementById("dt-open").href = leaf.path;
+}
+
+function switchTab(period){
+  activeTab = period;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.tab===period));
+  document.getElementById("dt-pill").textContent = PILL[period];
+  buildTab(period);
+  const def = selected[period] || INDEX[period].defaultPath;
+  // 触发默认预览
+  const el = document.querySelector('.leaf[data-path="'+CSS.escape(def)+'"]');
+  const leafObj = findLeaf(INDEX[period], def);
+  if (leafObj) selectLeaf(period, leafObj, el);
+}
+
+function findLeaf(data, path){
+  for (const n of data.nodes){
+    if (n.children){ const f = n.children.find(c=>c.path===path); if (f) return f; }
+    else if (n.path === path) return n;
+  }
+  return null;
+}
+
+function esc(s){ const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+
+document.getElementById("tabs").addEventListener("click", e=>{
+  const b = e.target.closest(".tab"); if (!b) return;
+  switchTab(b.dataset.tab);
+});
+
+// 初始：日报 + 最新一天
+switchTab("daily");
+</script>
+</body>
+</html>
