@@ -25,7 +25,25 @@ import urllib.parse
 import datetime
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MANIFEST_PATH = os.path.join(ROOT, "manifest.json")
 API = "https://aihot.virxact.com/api/public/items"
+
+
+def load_manifest():
+    """读取跨运行累计的「已发布期次清单」，用于归档首页（避免每次只索引当前抓取）。"""
+    try:
+        with open(MANIFEST_PATH, encoding="utf-8") as f:
+            m = json.load(f)
+        for k in ("daily", "weekly", "monthly"):
+            m.setdefault(k, {})
+        return m
+    except Exception:
+        return {"daily": {}, "weekly": {}, "monthly": {}}
+
+
+def save_manifest(m):
+    with open(MANIFEST_PATH, "w", encoding="utf-8") as f:
+        json.dump(m, f, ensure_ascii=False)
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
 
@@ -529,10 +547,11 @@ def write_pair(html_path, md_path, html_content, md_content):
 
 def main():
     ap = argparse.ArgumentParser(description="生成 AI HOT 每日/周/月速递")
-    ap.add_argument("--since-days", type=int, default=3, help="回看天数（默认 3 天）")
+    ap.add_argument("--since-days", type=int, default=31, help="回看天数（默认 31 天，保证周报/月报覆盖完整周期）")
     ap.add_argument("--take", type=int, default=100, help="每次拉取条数上限")
     args = ap.parse_args()
 
+    manifest = load_manifest()
     ref = now_bj()
     now_utc = datetime.datetime.now(datetime.timezone.utc)
     since = (now_utc - datetime.timedelta(days=args.since_days)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -573,6 +592,11 @@ def main():
             render_report(rel_prefix_for(html_path), "天", title, subtitle, its, ref, prev_f, next_f, f"{dk}.md"),
             render_report_md(title, subtitle, its, ref),
         )
+        manifest["daily"][dk] = {
+            "path": f"daily/{y}/{m}/{dk}.html",
+            "label": f"{dk} {wk}",
+            "count": len(its),
+        }
     print(f"[ok] 日报：{len(daily_dates)} 期（{daily_dates[0]} ~ {daily_dates[-1]}）")
 
     # ---------- 周报 ----------
@@ -597,6 +621,11 @@ def main():
             render_report(rel_prefix_for(html_path), "周", title, subtitle, its, ref, prev_f, next_f, f"{mk}.md"),
             render_report_md(title, subtitle, its, ref),
         )
+        manifest["weekly"][mk] = {
+            "path": f"weekly/{y}/{m:02d}/{mk}.html",
+            "label": f"第{wk_num}周 · {range_label}",
+            "count": len(its),
+        }
     print(f"[ok] 周报：{len(wk_dates)} 期")
 
     # ---------- 月报 ----------
@@ -619,86 +648,89 @@ def main():
             render_report(rel_prefix_for(html_path), "月", title, subtitle, its, ref, prev_f, next_f, f"{fname}.md"),
             render_report_md(title, subtitle, its, ref),
         )
+        manifest["monthly"][f"{y}-{m:02d}"] = {
+            "path": f"monthly/{y}/{y}-{m:02d}.html",
+            "label": f"{y} 年 {m} 月",
+            "count": len(its),
+        }
     print(f"[ok] 月报：{len(mo_keys)} 期")
 
-    # ---------- 构建首页 INDEX 数据 ----------
+    # ---------- 构建首页 INDEX（基于 manifest，跨运行累计全部历史期次）----------
+    def latest_key(d):
+        return max(d.keys()) if d else ""
+
     # 日报：按月分组（年-月）
     daily_nodes = []
     d_groups = {}
-    for dk in daily_dates:
+    for dk, e in manifest["daily"].items():
         y, m, _ = dk.split("-")
-        d_groups.setdefault((y, m), []).append(dk)
+        d_groups.setdefault((y, m), []).append((dk, e))
     for (y, m) in sorted(d_groups.keys(), reverse=True):
         children = [{
-            "label": f"{dk} {WEEKDAYS[parse_iso(dk+'T00:00:00+08:00').weekday()]}",
-            "path": f"daily/{y}/{m}/{dk}.html",
-            "count": len(daily[dk]),
-        } for dk in sorted(d_groups[(y, m)], reverse=True)]
+            "label": e["label"],
+            "path": e["path"],
+            "count": e["count"],
+        } for dk, e in sorted(d_groups[(y, m)], key=lambda x: x[0], reverse=True)]
         daily_nodes.append({"label": f"{y} 年 {m} 月", "children": children})
 
     # 周报：按月分组（周一所在月）
     weekly_nodes = []
     w_groups = {}
-    for mk in wk_dates:
-        mdt = parse_iso(mk + "T00:00:00+08:00")
-        key = (mdt.year, mdt.month)
-        w_groups.setdefault(key, []).append(mk)
+    for mk, e in manifest["weekly"].items():
+        parts = e["path"].split("/")          # weekly/<y>/<m>/<mk>.html
+        w_groups.setdefault((parts[1], parts[2]), []).append((mk, e))
     for (y, m) in sorted(w_groups.keys(), reverse=True):
-        children = []
-        for mk in sorted(w_groups[(y, m)], reverse=True):
-            mdt = parse_iso(mk + "T00:00:00+08:00")
-            sunday = mdt + datetime.timedelta(days=6)
-            children.append({
-                "label": f"第{mdt.isocalendar()[1]}周 · {mdt:%m-%d}~{sunday:%m-%d}",
-                "path": f"weekly/{y}/{m:02d}/{mk}.html",
-                "count": len(weekly[mk]),
-            })
+        children = [{
+            "label": e["label"],
+            "path": e["path"],
+            "count": e["count"],
+        } for mk, e in sorted(w_groups[(y, m)], key=lambda x: x[0], reverse=True)]
         weekly_nodes.append({"label": f"{y} 年 {m} 月", "children": children})
 
     # 月报：跨年则按年分组，单年则平铺
-    years = sorted({k[0] for k in mo_keys})
     monthly_nodes = []
+    years = sorted({k.split("-")[0] for k in manifest["monthly"].keys()})
     if len(years) > 1:
         m_groups = {}
-        for (y, m) in mo_keys:
-            m_groups.setdefault(y, []).append((y, m))
+        for key, e in manifest["monthly"].items():
+            m_groups.setdefault(key.split("-")[0], []).append((key, e))
         for y in sorted(m_groups.keys(), reverse=True):
             children = [{
-                "label": f"{ym[1]} 月",
-                "path": f"monthly/{ym[0]}/{ym[0]}-{ym[1]:02d}.html",
-                "count": len(monthly[ym]),
-            } for ym in sorted(m_groups[y], reverse=True)]
+                "label": e["label"],
+                "path": e["path"],
+                "count": e["count"],
+            } for key, e in sorted(m_groups[y], key=lambda x: x[0], reverse=True)]
             monthly_nodes.append({"label": f"{y} 年", "children": children})
     else:
-        for (y, m) in sorted(mo_keys, reverse=True):
+        for key, e in sorted(manifest["monthly"].items(), key=lambda x: x[0], reverse=True):
             monthly_nodes.append({
-                "label": f"{y} 年 {m} 月",
-                "path": f"monthly/{y}/{y}-{m:02d}.html",
-                "count": len(monthly[(y, m)]),
+                "label": e["label"],
+                "path": e["path"],
+                "count": e["count"],
             })
 
     index_data = {
         "daily": {
-            "defaultPath": f"daily/{daily_dates[-1].split('-')[0]}/{daily_dates[-1].split('-')[1]}/{daily_dates[-1]}.html"
-                          if daily_dates else "",
+            "defaultPath": manifest["daily"][latest_key(manifest["daily"])]["path"]
+                           if manifest["daily"] else "",
             "nodes": daily_nodes,
         },
         "weekly": {
-            "defaultPath": (f"weekly/{parse_iso(wk_dates[-1]+'T00:00:00+08:00').year}/"
-                            f"{parse_iso(wk_dates[-1]+'T00:00:00+08:00').month:02d}/{wk_dates[-1]}.html")
-                           if wk_dates else "",
+            "defaultPath": manifest["weekly"][latest_key(manifest["weekly"])]["path"]
+                           if manifest["weekly"] else "",
             "nodes": weekly_nodes,
         },
         "monthly": {
-            "defaultPath": f"monthly/{mo_keys[-1][0]}/{mo_keys[-1][0]}-{mo_keys[-1][1]:02d}.html"
-                           if mo_keys else "",
+            "defaultPath": manifest["monthly"][latest_key(manifest["monthly"])]["path"]
+                           if manifest["monthly"] else "",
             "nodes": monthly_nodes,
         },
     }
 
+    save_manifest(manifest)
     with open(os.path.join(ROOT, "index.html"), "w", encoding="utf-8") as f:
         f.write(render_index(index_data))
-    print(f"[ok] index.html 已生成（日报 {len(daily_dates)} / 周报 {len(wk_dates)} / 月报 {len(mo_keys)} 期）")
+    print(f"[ok] index.html 已生成（累计归档：日报 {len(manifest['daily'])} / 周报 {len(manifest['weekly'])} / 月报 {len(manifest['monthly'])} 期）")
 
 
 if __name__ == "__main__":
