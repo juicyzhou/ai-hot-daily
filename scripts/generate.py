@@ -230,6 +230,19 @@ def date_key(iso):
     return now_bj().strftime("%Y-%m-%d")
 
 
+# 滚动日：每天 07:30 起算，07:30 之前的数据归到前一天。
+# 例：2026-08-05 06:00 发布的资讯归到 2026-08-04 的日报里。
+DAY_BOUNDARY_HOUR = 7
+DAY_BOUNDARY_MIN = 30
+
+
+def rolling_day_key(dt_bj):
+    """按滚动日（07:30 起）返回所属日报的日期字符串。dt_bj 为北京时间。"""
+    if (dt_bj.hour, dt_bj.minute) < (DAY_BOUNDARY_HOUR, DAY_BOUNDARY_MIN):
+        return (dt_bj - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+    return dt_bj.strftime("%Y-%m-%d")
+
+
 def monday_of(dt_bj):
     return (dt_bj - datetime.timedelta(days=dt_bj.weekday())).replace(
         hour=0, minute=0, second=0, microsecond=0)
@@ -266,9 +279,23 @@ def fetch(since_iso, take=100, max_items=400):
 
 
 def categorize(items):
+    """按板块分组；板块内按综合分（score × 板块权重 + 时效加分）降序排列，
+    重要的排在前。"""
     groups = {c[0]: [] for c in CATS}
     other = []
+    cat_w = {"industry": 1.5, "ai-models": 1.3, "paper": 1.1, "ai-products": 1.0, "tip": 0.8}
+    ref = now_bj()
+    def imp(it):
+        s = float(it.get("score") or 50)
+        cw = cat_w.get(it.get("category") or "tip", 1.0)
+        try:
+            age_h = (ref - to_bj(parse_iso(it.get("publishedAt") or it.get("discoveredAt")))).total_seconds() / 3600
+        except Exception:
+            age_h = 999
+        tw = 20 if age_h < 24 else (12 if age_h < 48 else (6 if age_h < 72 else 0))
+        return s * cw + tw
     for it in items:
+        it["_imp"] = imp(it)
         cat = it.get("category") or "other"
         if cat in groups:
             groups[cat].append(it)
@@ -276,6 +303,8 @@ def categorize(items):
             other.append(it)
     if other:
         groups["other"] = other
+    for k in groups:
+        groups[k].sort(key=lambda x: -x.get("_imp", 0))
     return groups
 
 
@@ -561,13 +590,14 @@ def main():
     print(f"[info] 拉到 {len(items)} 条")
 
     # 分组
+    # 日报：按滚动日（07:30 起），例如 08-05 06:00 的资讯归入 08-04 日报
     daily = {}     # date -> [items]
     weekly = {}    # monday_date -> [items]
     monthly = {}   # (y,m) -> [items]
     for it in items:
         bj = to_bj(parse_iso(it.get("publishedAt") or it.get("discoveredAt")
                              or now_utc.isoformat()))
-        dk = bj.strftime("%Y-%m-%d")
+        dk = rolling_day_key(bj)
         daily.setdefault(dk, []).append(it)
         mk = monday_of(bj).strftime("%Y-%m-%d")
         weekly.setdefault(mk, []).append(it)
@@ -586,7 +616,10 @@ def main():
         md_path = os.path.join(ddir, f"{dk}.md")
         wk = WEEKDAYS[parse_iso(dk + "T00:00:00+08:00").weekday()]
         title = f"AI HOT 每日速递 · {dk}"
-        subtitle = f"共 {len(its)} 条精选 · 统计时段 {dk}（北京时间）"
+        # 滚动窗口：日报 = 当天 07:30 ~ 次日 07:30
+        dk_date = parse_iso(dk + "T00:00:00+08:00")
+        next_dk = (dk_date + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        subtitle = f"共 {len(its)} 条精选 · 统计时段 {dk} 07:30 ~ {next_dk} 07:30（北京时间）"
         write_pair(
             html_path, md_path,
             render_report(rel_prefix_for(html_path), "天", title, subtitle, its, ref, prev_f, next_f, f"{dk}.md"),
