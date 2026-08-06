@@ -4,3 +4,6 @@ __pycache__/
 .workbuddy/
 # 无关的嵌套空 git 仓库，会阻断 git add
 ai-video-skill/
+# 本地临时素材（截图/视频），不发布到公开仓库
+shots_tmp/
+out_tmp/
