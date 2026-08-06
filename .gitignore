@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 .DS_Store
 .workbuddy/
+# 无关的嵌套空 git 仓库，会阻断 git add
+ai-video-skill/
