@@ -81,15 +81,23 @@ def build_segments(report_date: str, sections, total: int):
 
 
 def send(segment: str) -> bool:
-    payload = json.dumps(
-        {"chat_type": 2, "chatid": CHATID, "msgtype": "text", "text": {"content": segment}},
-        ensure_ascii=False,
+    # wecom-cli >= 1.1.0：子命令由 `msg send_message <json>` 改为
+    # `message send --chat-id <id> --msg-type text --text <json>`（chat_type 已由框架推断）
+    text_json = json.dumps({"content": segment}, ensure_ascii=False)
+    r = subprocess.run(
+        [
+            "wecom-cli", "message", "send",
+            "--chat-id", CHATID,
+            "--msg-type", "text",
+            "--text", text_json,
+        ],
+        capture_output=True,
+        text=True,
     )
-    r = subprocess.run(["wecom-cli", "msg", "send_message", payload], capture_output=True, text=True)
     out = (r.stdout or "") + (r.stderr or "")
-    # wecom-cli 走 MCP 通道，返回体里 errcode 是被转义的（\"errcode\": 0），需归一化后再判断
+    # wecom-cli 走 MCP 通道，返回体里 errcode 可能是被转义的（\"errcode\": 0），需归一化后再判断
     flat = out.replace("\\", "")
-    ok = '"errcode": 0' in flat or '"errcode":0' in flat
+    ok = '"errcode": 0' in flat or '"errcode":0' in flat or '"errmsg": "ok"' in flat
     print("[send] ok=%s %s" % (ok, out.strip()[:300]))
     return ok
 

@@ -7,3 +7,6 @@ ai-video-skill/
 # 本地临时素材（截图/视频），不发布到公开仓库
 shots_tmp/
 out_tmp/
+
+# 临时授权二维码（含一次性凭证，勿提交到公开仓库）
+lark_auth_qr*.png
