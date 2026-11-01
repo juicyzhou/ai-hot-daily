@@ -26,7 +26,11 @@ import datetime
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MANIFEST_PATH = os.path.join(ROOT, "manifest.json")
-API = "https://aihot.virxact.com/api/public/items"
+# 2026-10-31 起，旧域名 /api/public/items 已停用（sunset），迁移到 aihot.news 的 v1 API。
+# v1 仅支持 window=24h|7d（无 31 天 since），用 cursor 分页；字段结构也不同（见 normalize_item）。
+API = "https://aihot.news/api/v1/items"
+# v1 版块里新增 opinion（观点），并入「技巧与观点」(tip) 以保持五大版块结构。
+CAT_REMAP = {"opinion": "tip"}
 
 
 def load_manifest():
@@ -248,10 +252,28 @@ def monday_of(dt_bj):
         hour=0, minute=0, second=0, microsecond=0)
 
 
-def fetch(since_iso, take=100, max_items=400):
+def normalize_item(it):
+    """把 v1 API 的条目字段规整成生成器下游兼容的形状。"""
+    src = it.get("source") or {}
+    links = it.get("links") or {}
+    out = dict(it)
+    out["source"] = src.get("name") if isinstance(src, dict) else (src or "")
+    out["url"] = links.get("original") or links.get("aihot") or ""
+    out["permalink"] = links.get("aihot") or links.get("original") or ""
+    out["title_en"] = it.get("originalTitle") or ""
+    raw_cat = it.get("category") or "other"
+    out["category"] = CAT_REMAP.get(raw_cat, raw_cat)
+    return out
+
+
+def fetch(since_iso=None, take=100, max_pages=10):
+    """拉取 v1 API（mode=selected, window=7d 上限），cursor 分页直到 hasMore=False。
+    since_iso 仅用于日志展示；实际窗口由 window=7d 控制（API 不支持更长窗口）。
+    """
     items, cursor, page = [], None, 0
-    while len(items) < max_items:
-        url = f"{API}?mode=selected&since={urllib.parse.quote(since_iso)}&take={take}"
+    window = "7d"
+    while page < max_pages:
+        url = f"{API}?mode=selected&window={window}&limit={take}"
         if cursor:
             url += "&cursor=" + urllib.parse.quote(cursor)
         req = urllib.request.Request(url, headers={"User-Agent": UA})
@@ -261,13 +283,13 @@ def fetch(since_iso, take=100, max_items=400):
         except Exception as e:
             print(f"[warn] 拉取数据失败: {e}", file=sys.stderr)
             break
-        items.extend(data.get("items", []))
-        if not data.get("hasNext") or not data.get("nextCursor"):
+        for it in data.get("items", []):
+            items.append(normalize_item(it))
+        pg = data.get("page", {})
+        if not pg.get("hasMore") or not pg.get("nextCursor"):
             break
-        cursor = data["nextCursor"]
+        cursor = pg["nextCursor"]
         page += 1
-        if page > 6:
-            break
     seen, uniq = set(), []
     for it in items:
         iid = it.get("id")
@@ -583,10 +605,12 @@ def main():
     manifest = load_manifest()
     ref = now_bj()
     now_utc = datetime.datetime.now(datetime.timezone.utc)
-    since = (now_utc - datetime.timedelta(days=args.since_days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    # v1 API 仅支持 window=7d，故以「滚动日窗口起点 = 现在-7天」作为周/月报再生成的边界：
+    # 仅当某周期起点落在 7 天窗口内才再生成，避免用部分数据覆盖磁盘上已完整的旧期次。
+    window_start_date = (ref - datetime.timedelta(days=7)).date()
 
-    print(f"[info] 拉取最近 {args.since_days} 天精选（since={since}）...")
-    items = fetch(since, args.take)
+    print(f"[info] 拉取 v1 API 最近 7 天精选（window=7d, mode=selected）...")
+    items = fetch(take=args.take)
     print(f"[info] 拉到 {len(items)} 条")
 
     # 分组
@@ -636,6 +660,9 @@ def main():
     wk_dates = sorted(weekly.keys())
     for i, mk in enumerate(wk_dates):
         mdt = parse_iso(mk + "T00:00:00+08:00")
+        # 周报起点（周一）早于 7 天窗口则跳过再生成，保留磁盘上已完整提交的旧周报。
+        if mdt.date() < window_start_date:
+            continue
         wk_num = mdt.isocalendar()[1]
         sunday = mdt + datetime.timedelta(days=6)
         range_label = f"{mdt:%m-%d}~{sunday:%m-%d}"
@@ -664,6 +691,9 @@ def main():
     # ---------- 月报 ----------
     mo_keys = sorted(monthly.keys())
     for i, (y, m) in enumerate(mo_keys):
+        # 月报起点（1 日）早于 7 天窗口则跳过再生成，保留磁盘上已完整提交的旧月报。
+        if datetime.date(y, m, 1) < window_start_date:
+            continue
         its = monthly[(y, m)]
         mdir = os.path.join(ROOT, "monthly", str(y))
         os.makedirs(mdir, exist_ok=True)
