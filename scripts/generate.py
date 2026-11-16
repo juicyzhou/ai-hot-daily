@@ -266,14 +266,15 @@ def normalize_item(it):
     return out
 
 
-def fetch(since_iso=None, take=100, max_pages=10):
-    """拉取 v1 API（mode=selected, window=7d 上限），cursor 分页直到 hasMore=False。
+def fetch(since_iso=None, take=100, max_pages=10, mode="selected"):
+    """拉取 v1 API（window=7d 上限），cursor 分页直到 hasMore=False。
     since_iso 仅用于日志展示；实际窗口由 window=7d 控制（API 不支持更长窗口）。
+    mode=selected 为主路径；mode=all 仅用于精选池对目标滚动日出现策展缺口时的补齐。
     """
     items, cursor, page = [], None, 0
     window = "7d"
     while page < max_pages:
-        url = f"{API}?mode=selected&window={window}&limit={take}"
+        url = f"{API}?mode={mode}&window={window}&limit={take}"
         if cursor:
             url += "&cursor=" + urllib.parse.quote(cursor)
         req = urllib.request.Request(url, headers={"User-Agent": UA})
@@ -612,6 +613,37 @@ def main():
     print(f"[info] 拉取 v1 API 最近 7 天精选（window=7d, mode=selected）...")
     items = fetch(take=args.take)
     print(f"[info] 拉到 {len(items)} 条")
+
+    # 滚动日缺口补齐：偶发情况下策展方当日未把条目标为 selected（如 2026-11-15），
+    # 导致目标滚动日（昨天 07:30 ~ 今天 07:30）在精选池里为空、无法生成日报页、
+    # 使对外发布的直链 404。此处仅针对「目标日报日」做补齐：若精选池该滚动日为空，
+    # 则拉取 mode=all，取同一时间窗的真实条目补入，确保当日报告存在且不空链。
+    # 一旦策展恢复正常（精选池该日有条目），补齐逻辑自动不触发，完全幂等。
+    def _item_day(it):
+        raw = it.get("publishedAt") or it.get("discoveredAt")
+        if raw:
+            try:
+                return rolling_day_key(to_bj(parse_iso(raw)))
+            except Exception:
+                pass
+        return None
+
+    target_day = (ref - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+    have_target = any(_item_day(it) == target_day for it in items)
+    if not have_target:
+        print(f"[warn] 精选池缺少目标滚动日 {target_day}，尝试用 mode=all 补齐...")
+        all_items = fetch(take=args.take, mode="all")
+        fill = [it for it in all_items if _item_day(it) == target_day]
+        seen = {it.get("id") for it in items}
+        added = 0
+        for it in fill:
+            if it.get("id") not in seen:
+                items.append(it)
+                seen.add(it.get("id"))
+                added += 1
+        print(f"[info] 已从 mode=all 补齐 {target_day} 共 {added} 条（真实资讯，非虚构）")
+    else:
+        print(f"[info] 目标滚动日 {target_day} 在精选池中已有条目，无需补齐")
 
     # 分组
     # 日报：按滚动日（07:30 起），例如 08-05 06:00 的资讯归入 08-04 日报

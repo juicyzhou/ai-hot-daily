@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI HOT 每周速递 · 第47周（11-16~11-22）</title>
+<style>:root{
+  --indigo:#6366f1; --bg:#f6f7fb; --card:#ffffff; --text:#1e2230;
+  --muted:#6b7280; --line:#e6e8f0; --shadow:0 4px 18px rgba(30,34,48,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0e1016; --card:#171a23; --text:#e8eaf0; --muted:#9aa3b2;
+    --line:#262b38; --shadow:0 4px 18px rgba(0,0,0,.4); }
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:16px 20px 48px}
+header.top{margin-bottom:14px}
+.brand{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--indigo);letter-spacing:.5px;font-size:13px}
+.brand .dot{width:8px;height:8px;border-radius:50%;background:var(--indigo);box-shadow:0 0 0 4px rgba(99,102,241,.18)}
+h1{font-size:25px;margin:6px 0 3px}
+.sub{color:var(--muted);font-size:14px}
+a.back{display:inline-block;margin-top:10px;color:var(--indigo);text-decoration:none;font-size:14px;font-weight:600}
+a.back:hover{text-decoration:underline}
+.sec{margin:18px 0}
+.sec h2{display:flex;align-items:center;gap:10px;font-size:18px;margin:0 0 14px}
+.sec h2 .bar{width:4px;height:18px;border-radius:3px;display:inline-block}
+.sec h2 .cnt{color:var(--muted);font-weight:500;font-size:14px}
+.cards{display:flex;flex-direction:column;gap:14px}
+.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:16px 18px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:transform .12s ease,border-color .12s ease}
+.card:hover{transform:translateY(-2px);border-color:var(--indigo)}
+.card-head{display:flex;align-items:flex-start;gap:10px}
+.cat-dot{width:9px;height:9px;border-radius:50%;margin-top:8px;flex:none}
+.card h3{margin:0;font-size:16.5px;line-height:1.45}
+.card .summary{margin:8px 0 0;color:var(--muted);font-size:14px}
+.card .meta{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:12.5px;color:var(--muted)}
+.card .source{font-weight:600;color:var(--text)}
+.nav{display:flex;justify-content:space-between;gap:12px;margin:30px 0 10px;flex-wrap:wrap}
+.nav a{color:var(--indigo);text-decoration:none;font-size:14px;font-weight:600;padding:8px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.nav a.disabled{opacity:.35;pointer-events:none}
+.nav a:hover{border-color:var(--indigo)}
+footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+footer a{color:var(--indigo);text-decoration:none}
+footer a:hover{text-decoration:underline}</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="brand"><span class="dot"></span>AI HOT 每日速递</span>
+    <h1>AI HOT 每周速递 · 第47周（11-16~11-22）</h1>
+    <div class="sub">共 8 条精选 · 统计时段 11-16~11-22（北京时间）</div>
+    <a class="back" href="../../../index.html" target="_top">← 返回首页 / 归档</a>
+  </header>
+    <section class="sec">
+      <h2><span class="bar" style="background:#6366f1"></span>模型发布<span class="cnt">1 条</span></h2>
+      <div class="cards">
+      <a class="card" href="https://qwen.ai/blog?id=qwen4-max" target="_blank" rel="noopener">
+        <div class="card-head">
+          <span class="cat-dot" style="background:#6366f1"></span>
+          <h3>Qwen 发布 Qwen4-Max：2.4T 参数骨干、百万 token 上下文与长程智能体能力</h3>
+        </div>
+        <p class="summary">Qwen 团队发布 Qwen4-Max，基于新 Qwen4 架构，拥有 2.4T 骨干参数、每 token 激活 71B、328B N-gram Embedding 参数，具备原生视觉能力和 100 万 token 上下文窗口。</p>
+        <div class="meta"><span class="source">Qwen：Blog Retrieval（API）</span><span class="time">57 分钟前</span></div>
+      </a>
+      </div>
+    </section>
+    <section class="sec">
+      <h2><span class="bar" style="background:#06b6d4"></span>产品发布<span class="cnt">2 条</span></h2>
+      <div class="cards">
+      <a class="card" href="https://x.com/lydiahallie/status/2122028598639136810" target="_blank" rel="noopener">
+        <div class="card-head">
+          <span class="cat-dot" style="background:#06b6d4"></span>
+          <h3>Claude Code 桌面版支持自定义主题 mod</h3>
+        </div>
+        <p class="summary">自定义主题其实就是 mod，所以你的背景甚至能对实际会话做出反应！
+
+这里我让 Claude 随着我的上下文填满而下雪（这个 mod 挂接到 turn.step），但你可以玩得非常有创意 ☃️</p>
+        <div class="meta"><span class="source">X：Lydia Hallie（Anthropic，Claude Code） (@lydiahallie)</span><span class="time">今天 02:06</span></div>
+      </a>
+      <a class="card" href="https://simonwillison.net/2026/Nov/15/datasette/" target="_blank" rel="noopener">
+        <div class="card-head">
+          <span class="cat-dot" style="background:#06b6d4"></span>
+          <h3>Datasette 1.0a43 发布：输出渲染器支持流式输出</h3>
+        </div>
+        <p class="summary">Datasette 1.0a43 发布，内置 TSV 和 CSV 导出已改用流式输出，插件可通过新的 Response.stream() 方法一次性流式输出表中每一行。该版本还修复了私有存储查询可能泄露标题和 SQL 的安全问题，并新增行页面 JSON 设计、copy-schema Web Component 和 CSS 多页视图过渡。1.0 里程碑目前完成 53%。</p>
+        <div class="meta"><span class="source">Simon Willison 博客</span><span class="time">今天 07:20</span></div>
+      </a>
+      </div>
+    </section>
+    <section class="sec">
+      <h2><span class="bar" style="background:#f59e0b"></span>行业动态<span class="cnt">2 条</span></h2>
+      <div class="cards">
+      <a class="card" href="https://www.theverge.com/ai-artificial-intelligence/1033984/congress-export-rules-ai-chips-china" target="_blank" rel="noopener">
+        <div class="card-head">
+          <span class="cat-dot" style="background:#f59e0b"></span>
+          <h3>美国国会寻求收紧AI芯片出口规则</h3>
+        </div>
+        <p class="summary">在涉及Nvidia高管的争议事件后，美国国会正寻求进一步收紧AI芯片出口。民主党和共和党均对收紧相关规则的法案表示支持，并要求Nvidia高管出席国会作证。参议院银行委员会主席Tim Scott已致函Nvidia高管和商务部长Howard Lutnick，要求其公开作证。众议院议长Mike Johnson表示，国会内部在限制对华芯片出口问题上正形成共识。</p>
+        <div class="meta"><span class="source">The Verge：AI（RSS）</span><span class="time">今天 03:15</span></div>
+      </a>
+      <a class="card" href="https://x.com/rohanpaul_ai/status/2122087112082399393" target="_blank" rel="noopener">
+        <div class="card-head">
+          <span class="cat-dot" style="background:#f59e0b"></span>
+          <h3>Wispr 自研语音模型 Canto 1 在真实听写测试中词错率降至 3.4%</h3>
+        </div>
+        <p class="summary">Wispr Flow 聘请前 Alexa 创始科学家 Ariya Rastrow 出任首席科学官，转向自训语音模型，首个模型 Canto 1 针对嘈杂真实听写场景训练。</p>
+        <div class="meta"><span class="source">X：Rohan Paul (@rohanpaul_ai)</span><span class="time">今天 05:59</span></div>
+      </a>
+      </div>
+    </section>
+    <section class="sec">
+      <h2><span class="bar" style="background:#ec4899"></span>技巧与观点<span class="cnt">3 条</span></h2>
+      <div class="cards">
+      <a class="card" href="https://mp.weixin.qq.com/s/ZJddy1ssHBvw_1sm12jrkg" target="_blank" rel="noopener">
+        <div class="card-head">
+          <span class="cat-dot" style="background:#ec4899"></span>
+          <h3>AI 手搓的 1.4M 纯 HTML 3D 游戏走红，卡兹克拆解 Three.js 程序化生成原理并给出提示词模板</h3>
+        </div>
+        <p class="summary">作者拆解了近期在群里疯传的 1.4M 纯 HTML 3D 游戏，指出其中约 700KB 是打包进文件的 Three.js，其余全部由代码程序化生成，没有图片、模型和录音。</p>
+        <div class="meta"><span class="source">公众号：数字生命卡兹克</span><span class="time">今天 07:56</span></div>
+      </a>
+      <a class="card" href="https://x.com/ClementDelangue/status/2122106063357194566" target="_blank" rel="noopener">
+        <div class="card-head">
+          <span class="cat-dot" style="background:#ec4899"></span>
+          <h3>Hugging Face CEO 重申权力集中是 AI 最大风险，呼吁更强的开源</h3>
+        </div>
+        <p class="summary">Hugging Face CEO Clément Delangue 转引 Anthropic IPO 财富估算并重申，权力、能力与财富的集中是 AI 最大的风险，且这种自然倾向非常强烈。他警告，若无远比现在更强的开源生态，世界可能面临前所未有的不对称与不平等。引用的估算称，按 1.5 万亿美元估值，Anthropic 约 5,300 名员工中约 4,250 人将成为百万富翁，其中约 50 人身家超过 1 亿美元，该估值高于 Anthropic 目前约 1 万亿美元的目标。</p>
+        <div class="meta"><span class="source">X：Clément Delangue（Hugging Face CEO） (@ClementDelangue)</span><span class="time">今天 07:14</span></div>
+      </a>
+      <a class="card" href="https://x.com/fchollet/status/2122016531878215790" target="_blank" rel="noopener">
+        <div class="card-head">
+          <span class="cat-dot" style="background:#ec4899"></span>
+          <h3>Chollet：2026 年初 SaaS 恐慌是胡扯</h3>
+        </div>
+        <p class="summary">当时就很明显了——2026 年初市场对 SaaS 的恐慌纯属胡扯</p>
+        <div class="meta"><span class="source">X：Francois Chollet (@fchollet)</span><span class="time">今天 01:19</span></div>
+      </a>
+      </div>
+    </section>
+  <div class="nav">
+    <a href="2026-11-09.html">← 上一周</a>
+    <a href="2026-11-16.md">查看 Markdown 版 →</a>
+    <a class="disabled">下一周 →</a>
+  </div>
+  <footer>数据来源：由 juicyzhou 设定任务自动整理 · GitHub：<a href="https://github.com/juicyzhou/ai-hot-daily" target="_blank" rel="noopener">git@github.com:juicyzhou/ai-hot-daily.git</a></footer>
+</div>
+</body>
+</html>
